@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+pragma solidity 0.8.27;
 
 import {Test, console} from "forge-std/Test.sol";
 import {EthDonations} from "../src/EthDonations.sol";
@@ -125,7 +125,7 @@ contract EthDonationsTest is Test {
         d.addDonationsFor{value: 2 ether}(donors, amounts);
     }
 
-    function test_fallback() public {
+    function test_Fallback() public {
         (bool success,) = address(d).call{value: 1 ether}("");
         assertEq(success, true);
         assertEq(d.donations(address(this)), 1 ether);
