@@ -38,7 +38,7 @@ contract EthDonationsTest is Test {
         assertEq(address(this).balance, starting_bal);
 
         vm.prank(address(1));
-        vm.expectRevert(EthDonations.NoDonation.selector); 
+        vm.expectRevert(EthDonations.NoDonation.selector);
         d.returnDonation();
     }
 
@@ -70,7 +70,7 @@ contract EthDonationsTest is Test {
         d.claimDonations();
 
         assertEq(address(d).balance, 0);
-        
+
         uint256 bal_after = d.owner().balance;
         assertEq(bal_after - bal_before, 10 ether);
     }
@@ -83,7 +83,7 @@ contract EthDonationsTest is Test {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = 1 ether;
         amounts[1] = 1 ether;
-        
+
         vm.expectRevert(Ownable.Unauthorized.selector);
         d.addToDonations(donors, amounts);
 
@@ -118,7 +118,7 @@ contract EthDonationsTest is Test {
         assertEq(bal_after - bal_before, 2 ether);
 
         vm.prank(d.owner());
-        
+
         vm.expectRevert(EthDonations.DonationsEnded.selector);
         d.addToDonations{value: 2 ether}(donors, amounts);
     }
