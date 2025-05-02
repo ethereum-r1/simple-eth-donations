@@ -65,7 +65,7 @@ contract EthDonations is Ownable {
         if (msg.value == 0) revert NoDonation();
         if (block.timestamp > donationsEndTime) revert DonationsEnded();
         if (claimed) revert DonationsAlreadyClaimed();
-        
+
         uint256 length = donors.length;
         if (donors.length != amounts.length) revert LengthMismatch();
 
