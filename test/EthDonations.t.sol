@@ -85,22 +85,22 @@ contract EthDonationsTest is Test {
         amounts[1] = 1 ether;
 
         vm.expectRevert(Ownable.Unauthorized.selector);
-        d.addToDonations(donors, amounts);
+        d.addDonationsFor(donors, amounts);
 
         vm.prank(d.owner());
         vm.expectRevert(EthDonations.NoDonation.selector);
-        d.addToDonations(donors, amounts);
+        d.addDonationsFor(donors, amounts);
 
         vm.prank(d.owner());
         vm.expectRevert(EthDonations.AmountMismatch.selector);
-        d.addToDonations{value: 1 ether}(donors, amounts);
+        d.addDonationsFor{value: 1 ether}(donors, amounts);
 
         vm.prank(d.owner());
         vm.expectRevert(EthDonations.LengthMismatch.selector);
         address[] memory dummy_donors = new address[](3);
-        d.addToDonations{value: 2 ether}(dummy_donors, amounts);
+        d.addDonationsFor{value: 2 ether}(dummy_donors, amounts);
         vm.prank(d.owner());
-        d.addToDonations{value: 2 ether}(donors, amounts);
+        d.addDonationsFor{value: 2 ether}(donors, amounts);
 
         assertEq(d.donations(address(1)), 1 ether);
         assertEq(d.donations(address(this)), 2 ether);
@@ -120,7 +120,7 @@ contract EthDonationsTest is Test {
         vm.prank(d.owner());
 
         vm.expectRevert(EthDonations.DonationsEnded.selector);
-        d.addToDonations{value: 2 ether}(donors, amounts);
+        d.addDonationsFor{value: 2 ether}(donors, amounts);
     }
 
     receive() external payable {}
