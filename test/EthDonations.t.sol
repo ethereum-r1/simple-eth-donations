@@ -7,11 +7,11 @@ import {Ownable} from "@solady/contracts/auth/Ownable.sol";
 
 contract EthDonationsTest is Test {
     EthDonations public d;
-    address owner = address(1);
+    address owner = 0xE73EaFBf9061f26Df4f09e08B53c459Df03E2b66;
 
     function setUp() public {
         d = new EthDonations(10 ether, block.timestamp + 90 days, owner);
-        vm.deal(address(1), 10 ether);
+        vm.deal(owner, 10 ether);
     }
 
     function test_Donate() public {
@@ -123,6 +123,16 @@ contract EthDonationsTest is Test {
 
         vm.expectRevert(EthDonations.DonationsEnded.selector);
         d.addDonationsFor{value: 2 ether}(donors, amounts);
+    }
+
+    function test_fallback() public {
+        (bool success,) = address(d).call{value: 1 ether}("");
+        assertEq(success, true);
+        assertEq(d.donations(address(this)), 1 ether);
+
+        (success,) = address(d).call{value: 1 ether}("aaaaaaaaaaaaaaaaaaaa");
+        assertEq(success, true);
+        assertEq(d.donations(address(this)), 2 ether);
     }
 
     receive() external payable {}

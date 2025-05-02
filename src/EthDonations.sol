@@ -26,7 +26,7 @@ contract EthDonations is Ownable {
         _initializeOwner(_owner);
     }
 
-    function donate() external payable {
+    function donate() public payable {
         if (block.timestamp > donationsEndTime) revert DonationsEnded();
         if (msg.value == 0) revert NoDonation();
         donations[msg.sender] += msg.value;
@@ -69,5 +69,13 @@ contract EthDonations is Ownable {
         }
 
         if (totalAmount != msg.value) revert AmountMismatch();
+    }
+
+    receive() external payable {
+        donate();
+    }
+
+    fallback() external payable {
+        donate();
     }
 }
