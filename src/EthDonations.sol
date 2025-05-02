@@ -29,7 +29,8 @@ contract EthDonations is Ownable {
     }
 
     function donate() public payable {
-        if (block.timestamp > donationsEndTime || claimed) revert DonationsEnded();
+        if (block.timestamp > donationsEndTime) revert DonationsEnded();
+        if (claimed) revert DonationsAlreadyClaimed();
         if (msg.value == 0) revert NoDonation();
         donations[msg.sender] += msg.value;
 
@@ -38,7 +39,8 @@ contract EthDonations is Ownable {
 
     function returnDonation() external {
         if (block.timestamp < donationsEndTime) revert DonationsNotEnded();
-        if (address(this).balance >= donationsGoal || claimed) revert DonationsGoalReached();
+        if (address(this).balance >= donationsGoal) revert DonationsGoalReached();
+        if (claimed) revert DonationsAlreadyClaimed();
 
         uint256 amount = donations[msg.sender];
         if (amount == 0) revert NoDonation();
@@ -61,7 +63,9 @@ contract EthDonations is Ownable {
 
     function addDonationsFor(address[] calldata donors, uint256[] calldata amounts) external payable onlyOwner {
         if (msg.value == 0) revert NoDonation();
-        if (block.timestamp > donationsEndTime || claimed) revert DonationsEnded();
+        if (block.timestamp > donationsEndTime) revert DonationsEnded();
+        if (claimed) revert DonationsAlreadyClaimed();
+        
         uint256 length = donors.length;
         if (donors.length != amounts.length) revert LengthMismatch();
 

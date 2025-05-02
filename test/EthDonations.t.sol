@@ -79,10 +79,10 @@ contract EthDonationsTest is Test {
         vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
         d.claimDonations(address(0));
 
-        vm.expectRevert(EthDonations.DonationsEnded.selector);
+        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
         d.donate{value: 1 ether}();
 
-        vm.expectRevert(EthDonations.DonationsGoalReached.selector);
+        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
         d.returnDonation();
     }
 
@@ -117,14 +117,14 @@ contract EthDonationsTest is Test {
         vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
         d.claimDonations(address(0));
 
-        vm.expectRevert(EthDonations.DonationsEnded.selector);
+        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
         d.donate{value: 1 ether}();
 
         vm.expectRevert(EthDonations.DonationsNotEnded.selector);
         d.returnDonation();
 
         vm.warp(block.timestamp + 90 days + 1);
-        vm.expectRevert(EthDonations.DonationsGoalReached.selector);
+        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
         d.returnDonation();
     }
 
