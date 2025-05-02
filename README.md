@@ -41,7 +41,7 @@ $ anvil
 ### Deploy
 
 ```shell
-$ forge script script/EthDonations.s.sol:EthDonations --rpc-url <your_rpc_url> --account <pwd_encrypted_account_filepath>
+$ forge script script/EthDonations.s.sol:EthDonationsScript --rpc-url <your_rpc_url> --account <pwd_encrypted_account_filepath>
 ```
 
 ### Cast
