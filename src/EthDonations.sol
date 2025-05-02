@@ -46,12 +46,12 @@ contract EthDonations is Ownable {
         if (!success) revert TransferFailed();
     }
 
-    function claimDonations() external onlyOwner {
+    function claimDonations(address recipient) external onlyOwner {
         if (block.timestamp < donationsEndTime) revert DonationsNotEnded();
         uint256 amount = address(this).balance;
         if (amount < donationsGoal) revert DonationsGoalNotReached();
 
-        (bool success,) = msg.sender.call{value: amount}("");
+        (bool success,) = recipient.call{value: amount}("");
         if (!success) revert TransferFailed();
     }
 

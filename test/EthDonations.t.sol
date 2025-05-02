@@ -7,9 +7,11 @@ import {Ownable} from "@solady/contracts/auth/Ownable.sol";
 
 contract EthDonationsTest is Test {
     EthDonations public d;
+    address owner = address(1);
 
     function setUp() public {
-        d = new EthDonations(10 ether, block.timestamp + 90 days, msg.sender);
+        d = new EthDonations(10 ether, block.timestamp + 90 days, owner);
+        vm.deal(address(1), 10 ether);
     }
 
     function test_Donate() public {
@@ -46,16 +48,16 @@ contract EthDonationsTest is Test {
         d.donate{value: 1 ether}();
 
         vm.expectRevert(Ownable.Unauthorized.selector);
-        d.claimDonations();
+        d.claimDonations(address(0));
 
-        vm.prank(d.owner());
+        vm.prank(owner);
         vm.expectRevert(EthDonations.DonationsNotEnded.selector);
-        d.claimDonations();
+        d.claimDonations(address(0));
 
         vm.warp(block.timestamp + 90 days);
-        vm.prank(d.owner());
+        vm.prank(owner);
         vm.expectRevert(EthDonations.DonationsGoalNotReached.selector);
-        d.claimDonations();
+        d.claimDonations(address(0));
 
         d.donate{value: 9 ether}();
 
@@ -64,18 +66,18 @@ contract EthDonationsTest is Test {
         vm.expectRevert(EthDonations.DonationsGoalReached.selector);
         d.returnDonation();
 
-        uint256 bal_before = d.owner().balance;
+        uint256 bal_before = owner.balance;
 
-        vm.prank(d.owner());
-        d.claimDonations();
+        vm.prank(owner);
+        d.claimDonations(owner);
 
         assertEq(address(d).balance, 0);
 
-        uint256 bal_after = d.owner().balance;
+        uint256 bal_after = owner.balance;
         assertEq(bal_after - bal_before, 10 ether);
     }
 
-    function test_AddToDonations() public {
+    function test_AddDonationsFor() public {
         d.donate{value: 1 ether}();
         address[] memory donors = new address[](2);
         donors[0] = address(1);
@@ -87,19 +89,19 @@ contract EthDonationsTest is Test {
         vm.expectRevert(Ownable.Unauthorized.selector);
         d.addDonationsFor(donors, amounts);
 
-        vm.prank(d.owner());
+        vm.prank(owner);
         vm.expectRevert(EthDonations.NoDonation.selector);
         d.addDonationsFor(donors, amounts);
 
-        vm.prank(d.owner());
+        vm.prank(owner);
         vm.expectRevert(EthDonations.AmountMismatch.selector);
         d.addDonationsFor{value: 1 ether}(donors, amounts);
 
-        vm.prank(d.owner());
+        vm.prank(owner);
         vm.expectRevert(EthDonations.LengthMismatch.selector);
         address[] memory dummy_donors = new address[](3);
         d.addDonationsFor{value: 2 ether}(dummy_donors, amounts);
-        vm.prank(d.owner());
+        vm.prank(owner);
         d.addDonationsFor{value: 2 ether}(donors, amounts);
 
         assertEq(d.donations(address(1)), 1 ether);
@@ -117,7 +119,7 @@ contract EthDonationsTest is Test {
         bal_after = address(this).balance;
         assertEq(bal_after - bal_before, 2 ether);
 
-        vm.prank(d.owner());
+        vm.prank(owner);
 
         vm.expectRevert(EthDonations.DonationsEnded.selector);
         d.addDonationsFor{value: 2 ether}(donors, amounts);
