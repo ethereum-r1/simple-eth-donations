@@ -51,11 +51,6 @@ contract EthDonationsTest is Test {
         d.claimDonations(address(0));
 
         vm.prank(owner);
-        vm.expectRevert(EthDonations.DonationsNotEnded.selector);
-        d.claimDonations(address(0));
-
-        vm.warp(block.timestamp + 90 days);
-        vm.prank(owner);
         vm.expectRevert(EthDonations.DonationsGoalNotReached.selector);
         d.claimDonations(address(0));
 
@@ -63,6 +58,10 @@ contract EthDonationsTest is Test {
 
         assertEq(address(d).balance, 10 ether);
 
+        vm.expectRevert(EthDonations.DonationsNotEnded.selector);
+        d.returnDonation();
+
+        vm.warp(block.timestamp + 90 days);
         vm.expectRevert(EthDonations.DonationsGoalReached.selector);
         d.returnDonation();
 
@@ -75,6 +74,58 @@ contract EthDonationsTest is Test {
 
         uint256 bal_after = owner.balance;
         assertEq(bal_after - bal_before, 10 ether);
+
+        vm.prank(owner);
+        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
+        d.claimDonations(address(0));
+
+        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
+        d.donate{value: 1 ether}();
+
+        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
+        d.returnDonation();
+    }
+
+    function test_ClaimDonationsEarly() public {
+        d.donate{value: 1 ether}();
+
+        vm.expectRevert(Ownable.Unauthorized.selector);
+        d.claimDonations(address(0));
+
+        vm.prank(owner);
+        vm.expectRevert(EthDonations.DonationsGoalNotReached.selector);
+        d.claimDonations(address(0));
+
+        d.donate{value: 9 ether}();
+
+        assertEq(address(d).balance, 10 ether);
+
+        vm.expectRevert(EthDonations.DonationsNotEnded.selector);
+        d.returnDonation();
+
+        uint256 bal_before = owner.balance;
+
+        vm.prank(owner);
+        d.claimDonations(owner);
+
+        assertEq(address(d).balance, 0);
+
+        uint256 bal_after = owner.balance;
+        assertEq(bal_after - bal_before, 10 ether);
+
+        vm.prank(owner);
+        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
+        d.claimDonations(address(0));
+
+        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
+        d.donate{value: 1 ether}();
+
+        vm.expectRevert(EthDonations.DonationsNotEnded.selector);
+        d.returnDonation();
+
+        vm.warp(block.timestamp + 90 days + 1);
+        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
+        d.returnDonation();
     }
 
     function test_AddDonationsFor() public {
