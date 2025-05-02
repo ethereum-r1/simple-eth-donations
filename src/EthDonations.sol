@@ -10,6 +10,7 @@ contract EthDonations is Ownable {
     error TransferFailed();
     error DonationsGoalReached();
     error DonationsGoalNotReached();
+    error DonationsAlreadyClaimed();
     error LengthMismatch();
     error AmountMismatch();
 
@@ -19,6 +20,7 @@ contract EthDonations is Ownable {
     uint256 public immutable donationsEndTime;
 
     mapping(address => uint256) public donations;
+    bool public claimed;
 
     constructor(uint256 _donationsGoal, uint256 _donationsEndTime, address _owner) {
         donationsGoal = _donationsGoal;
@@ -27,7 +29,7 @@ contract EthDonations is Ownable {
     }
 
     function donate() public payable {
-        if (block.timestamp > donationsEndTime) revert DonationsEnded();
+        if (block.timestamp > donationsEndTime || claimed) revert DonationsEnded();
         if (msg.value == 0) revert NoDonation();
         donations[msg.sender] += msg.value;
 
@@ -36,7 +38,7 @@ contract EthDonations is Ownable {
 
     function returnDonation() external {
         if (block.timestamp < donationsEndTime) revert DonationsNotEnded();
-        if (address(this).balance >= donationsGoal) revert DonationsGoalReached();
+        if (address(this).balance >= donationsGoal || claimed) revert DonationsGoalReached();
 
         uint256 amount = donations[msg.sender];
         if (amount == 0) revert NoDonation();
@@ -47,17 +49,19 @@ contract EthDonations is Ownable {
     }
 
     function claimDonations(address recipient) external onlyOwner {
-        if (block.timestamp < donationsEndTime) revert DonationsNotEnded();
+        if (claimed) revert DonationsAlreadyClaimed();
         uint256 amount = address(this).balance;
         if (amount < donationsGoal) revert DonationsGoalNotReached();
 
         (bool success,) = recipient.call{value: amount}("");
         if (!success) revert TransferFailed();
+
+        claimed = true;
     }
 
     function addDonationsFor(address[] calldata donors, uint256[] calldata amounts) external payable onlyOwner {
         if (msg.value == 0) revert NoDonation();
-        if (block.timestamp > donationsEndTime) revert DonationsEnded();
+        if (block.timestamp > donationsEndTime || claimed) revert DonationsEnded();
         uint256 length = donors.length;
         if (donors.length != amounts.length) revert LengthMismatch();
 
