@@ -2,6 +2,7 @@
 pragma solidity 0.8.27;
 
 import {Ownable} from "@solady/contracts/auth/Ownable.sol";
+import {IERC20} from "forge-std/interfaces/IERC20.sol";
 
 contract EthDonations is Ownable {
     error DonationsEnded();
@@ -77,6 +78,10 @@ contract EthDonations is Ownable {
         }
 
         if (totalAmount != msg.value) revert AmountMismatch();
+    }
+
+    function rescueToken(address token, address recipient) external onlyOwner {
+        IERC20(token).transfer(recipient, IERC20(token).balanceOf(address(this)));
     }
 
     receive() external payable {

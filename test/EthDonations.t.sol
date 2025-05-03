@@ -4,14 +4,35 @@ pragma solidity 0.8.27;
 import {Test, console} from "forge-std/Test.sol";
 import {EthDonations} from "../src/EthDonations.sol";
 import {Ownable} from "@solady/contracts/auth/Ownable.sol";
+import {ERC20} from "@solady/contracts/tokens/ERC20.sol";
+
+contract MyERC20 is ERC20 {
+    constructor() {}
+
+    function name() public pure override returns (string memory) {
+        return "Test";
+    }
+
+    function symbol() public pure override returns (string memory) {
+        return "TEST";
+    }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+}
 
 contract EthDonationsTest is Test {
     EthDonations public d;
+    MyERC20 public token;
     address owner = 0xE73EaFBf9061f26Df4f09e08B53c459Df03E2b66;
 
     function setUp() public {
         d = new EthDonations(10 ether, block.timestamp + 90 days, owner);
+        token = new MyERC20();
+
         vm.deal(owner, 10 ether);
+        token.mint(address(this), 10 ether);
     }
 
     function test_Donate() public {
@@ -184,6 +205,30 @@ contract EthDonationsTest is Test {
         (success,) = address(d).call{value: 1 ether}("aaaaaaaaaaaaaaaaaaaa");
         assertEq(success, true);
         assertEq(d.donations(address(this)), 2 ether);
+    }
+
+    function test_RescueToken() public {
+        token.transfer(address(d), 5 ether);
+        assertEq(token.balanceOf(address(d)), 5 ether);
+        assertEq(token.balanceOf(address(this)), 5 ether);
+
+        vm.expectRevert(Ownable.Unauthorized.selector);
+        d.rescueToken(address(token), address(this));
+
+        vm.prank(owner);
+        d.rescueToken(address(token), address(this));
+        assertEq(token.balanceOf(address(this)), 10 ether);
+        assertEq(token.balanceOf(address(d)), 0);
+
+        token.transfer(address(d), 5 ether);
+        assertEq(token.balanceOf(address(d)), 5 ether);
+        assertEq(token.balanceOf(address(this)), 5 ether);
+
+        vm.prank(owner);
+        d.rescueToken(address(token), address(1));
+        assertEq(token.balanceOf(address(1)), 5 ether);
+        assertEq(token.balanceOf(address(d)), 0);
+        assertEq(token.balanceOf(address(this)), 5 ether);
     }
 
     receive() external payable {}
