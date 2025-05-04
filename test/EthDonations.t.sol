@@ -119,9 +119,9 @@ contract EthDonationsTest is Test {
         vm.expectRevert(EthDonations.DonationsEnded.selector);
         d.donate{value: 1 ether}();
 
-        // vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
-        // (bool success,) = address(d).call{value: 1 ether}("aaaaaaaaaaaaaaaaaaaa");
-        // assertEq(success, false);
+        (bool success,) = address(d).call{value: 1 ether}("aaaaaaaaaaaaaaaaaaaa");
+        assertEq(success, false);
+        assertEq(address(d).balance, 0 ether);
 
         vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
         d.returnDonation();
