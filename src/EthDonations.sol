@@ -33,7 +33,7 @@ contract EthDonations is Ownable {
     }
 
     function donate() public payable {
-        if (block.timestamp > donationsEndTime) revert DonationsEnded();
+        if (block.timestamp >= donationsEndTime) revert DonationsEnded();
         if (claimTimestamp > 0) revert DonationsAlreadyClaimed();
         if (msg.value == 0) revert NoDonation();
         donations[msg.sender] += msg.value;
