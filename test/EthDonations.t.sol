@@ -104,6 +104,9 @@ contract EthDonationsTest is Test {
 
         vm.warp(block.timestamp + 60);
 
+        vm.expectRevert(Ownable.Unauthorized.selector);
+        d.claim(address(1));
+
         uint256 bal_before = owner.balance;
         vm.prank(owner);
         d.claim(owner);
