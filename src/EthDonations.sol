@@ -74,7 +74,7 @@ contract EthDonations is Ownable {
 
     function addDonationsFor(address[] calldata donors, uint256[] calldata amounts) external payable onlyOwner {
         if (msg.value == 0) revert NoDonation();
-        if (block.timestamp > donationsEndTime) revert DonationsEnded();
+        if (block.timestamp >= donationsEndTime) revert DonationsEnded();
         if (claimTimestamp > 0) revert DonationsAlreadyClaimed();
 
         uint256 length = donors.length;
