@@ -126,7 +126,7 @@ contract EthDonationsTest is Test {
         assertEq(success, false);
         assertEq(address(d).balance, 0 ether);
 
-        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
+        vm.expectRevert(EthDonations.DonationsGoalReached.selector);
         d.returnDonation();
     }
 
@@ -178,7 +178,7 @@ contract EthDonationsTest is Test {
         d.returnDonation();
 
         vm.warp(block.timestamp + 90 days + 1);
-        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
+        vm.expectRevert(EthDonations.DonationsGoalReached.selector);
         d.returnDonation();
     }
 

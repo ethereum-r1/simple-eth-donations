@@ -24,6 +24,7 @@ contract EthDonations is Ownable {
     uint256 public immutable donationsEndTime;
 
     mapping(address => uint256) public donations;
+    uint256 public donationsTotal;
     uint256 public claimTimestamp;
 
     constructor(uint256 _donationsGoal, uint256 _donationsEndTime, address _owner) {
@@ -37,13 +38,14 @@ contract EthDonations is Ownable {
         if (claimTimestamp > 0) revert DonationsAlreadyClaimed();
         if (msg.value == 0) revert NoDonation();
         donations[msg.sender] += msg.value;
+        donationsTotal += msg.value;
 
         emit Donation(msg.sender, msg.value);
     }
 
     function returnDonation() external {
         if (block.timestamp < donationsEndTime) revert DonationsNotEnded();
-        if (address(this).balance >= donationsGoal) revert DonationsGoalReached();
+        if (donationsTotal >= donationsGoal) revert DonationsGoalReached();
         if (claimTimestamp > 0) revert DonationsAlreadyClaimed();
 
         uint256 amount = donations[msg.sender];
@@ -56,8 +58,7 @@ contract EthDonations is Ownable {
 
     function queueClaim() external onlyOwner {
         if (claimTimestamp > 0) revert DonationsAlreadyQueued();
-        uint256 amount = address(this).balance;
-        if (amount < donationsGoal) revert DonationsGoalNotReached();
+        if (donationsTotal < donationsGoal) revert DonationsGoalNotReached();
 
         claimTimestamp = block.timestamp;
     }
@@ -74,7 +75,7 @@ contract EthDonations is Ownable {
 
     function addDonationsFor(address[] calldata donors, uint256[] calldata amounts) external payable onlyOwner {
         if (msg.value == 0) revert NoDonation();
-        if (block.timestamp > donationsEndTime) revert DonationsEnded();
+        if (block.timestamp >= donationsEndTime) revert DonationsEnded();
         if (claimTimestamp > 0) revert DonationsAlreadyClaimed();
 
         uint256 length = donors.length;
@@ -88,6 +89,7 @@ contract EthDonations is Ownable {
         }
 
         if (totalAmount != msg.value) revert AmountMismatch();
+        donationsTotal += totalAmount;
     }
 
     function rescueToken(address token, address recipient) external onlyOwner {
