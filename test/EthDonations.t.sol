@@ -65,15 +65,15 @@ contract EthDonationsTest is Test {
         d.returnDonation();
     }
 
-    function test_ClaimDonations() public {
+    function test_Claim() public {
         d.donate{value: 1 ether}();
 
         vm.expectRevert(Ownable.Unauthorized.selector);
-        d.claimDonations(address(0));
+        d.queueClaim();
 
         vm.prank(owner);
         vm.expectRevert(EthDonations.DonationsGoalNotReached.selector);
-        d.claimDonations(address(0));
+        d.queueClaim();
 
         d.donate{value: 9 ether}();
 
@@ -86,36 +86,59 @@ contract EthDonationsTest is Test {
         vm.expectRevert(EthDonations.DonationsGoalReached.selector);
         d.returnDonation();
 
-        uint256 bal_before = owner.balance;
+        assertEq(d.claimTimestamp(), 0);
 
         vm.prank(owner);
-        d.claimDonations(owner);
+        d.queueClaim();
+
+        assertGt(d.claimTimestamp(), 0);
+        assertEq(address(d).balance, 10 ether);
+
+        vm.prank(owner);
+        vm.expectRevert(EthDonations.DonationsAlreadyQueued.selector);
+        d.queueClaim();
+
+        vm.prank(owner);
+        vm.expectRevert(EthDonations.DonationsNotClaimable.selector);
+        d.claim(owner);
+
+        vm.warp(block.timestamp + 60);
+
+        vm.expectRevert(Ownable.Unauthorized.selector);
+        d.claim(address(1));
+
+        uint256 bal_before = owner.balance;
+        vm.prank(owner);
+        d.claim(owner);
 
         assertEq(address(d).balance, 0);
-
         uint256 bal_after = owner.balance;
         assertEq(bal_after - bal_before, 10 ether);
 
         vm.prank(owner);
         vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
-        d.claimDonations(address(0));
+        d.claim(address(0));
 
-        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
+        vm.expectRevert(EthDonations.DonationsEnded.selector);
         d.donate{value: 1 ether}();
 
-        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
+        (bool success,) = address(d).call{value: 1 ether}("aaaaaaaaaaaaaaaaaaaa");
+        assertEq(success, false);
+        assertEq(address(d).balance, 0 ether);
+
+        vm.expectRevert(EthDonations.DonationsGoalReached.selector);
         d.returnDonation();
     }
 
-    function test_ClaimDonationsEarly() public {
+    function test_ClaimEarly() public {
         d.donate{value: 1 ether}();
 
         vm.expectRevert(Ownable.Unauthorized.selector);
-        d.claimDonations(address(0));
+        d.queueClaim();
 
         vm.prank(owner);
         vm.expectRevert(EthDonations.DonationsGoalNotReached.selector);
-        d.claimDonations(address(0));
+        d.queueClaim();
 
         d.donate{value: 9 ether}();
 
@@ -124,10 +147,20 @@ contract EthDonationsTest is Test {
         vm.expectRevert(EthDonations.DonationsNotEnded.selector);
         d.returnDonation();
 
-        uint256 bal_before = owner.balance;
-
         vm.prank(owner);
-        d.claimDonations(owner);
+        d.queueClaim();
+
+        assertGt(d.claimTimestamp(), 0);
+
+        vm.expectRevert(EthDonations.DonationsNotClaimable.selector);
+        vm.prank(owner);
+        d.claim(owner);
+
+        vm.warp(block.timestamp + 60);
+
+        uint256 bal_before = owner.balance;
+        vm.prank(owner);
+        d.claim(owner);
 
         assertEq(address(d).balance, 0);
 
@@ -136,7 +169,7 @@ contract EthDonationsTest is Test {
 
         vm.prank(owner);
         vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
-        d.claimDonations(address(0));
+        d.claim(address(0));
 
         vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
         d.donate{value: 1 ether}();
@@ -145,7 +178,7 @@ contract EthDonationsTest is Test {
         d.returnDonation();
 
         vm.warp(block.timestamp + 90 days + 1);
-        vm.expectRevert(EthDonations.DonationsAlreadyClaimed.selector);
+        vm.expectRevert(EthDonations.DonationsGoalReached.selector);
         d.returnDonation();
     }
 

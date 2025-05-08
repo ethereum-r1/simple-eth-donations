@@ -12,6 +12,9 @@ contract EthDonations is Ownable {
     error DonationsGoalReached();
     error DonationsGoalNotReached();
     error DonationsAlreadyClaimed();
+    error DonationsNotClaimable();
+    error DonationsAlreadyQueued();
+    error DonationsNotQueued();
     error LengthMismatch();
     error AmountMismatch();
 
@@ -21,7 +24,8 @@ contract EthDonations is Ownable {
     uint256 public immutable donationsEndTime;
 
     mapping(address => uint256) public donations;
-    bool public claimed;
+    uint256 public donationsTotal;
+    uint256 public claimTimestamp;
 
     constructor(uint256 _donationsGoal, uint256 _donationsEndTime, address _owner) {
         donationsGoal = _donationsGoal;
@@ -30,18 +34,19 @@ contract EthDonations is Ownable {
     }
 
     function donate() public payable {
-        if (block.timestamp > donationsEndTime) revert DonationsEnded();
-        if (claimed) revert DonationsAlreadyClaimed();
+        if (block.timestamp >= donationsEndTime) revert DonationsEnded();
+        if (claimTimestamp > 0) revert DonationsAlreadyClaimed();
         if (msg.value == 0) revert NoDonation();
         donations[msg.sender] += msg.value;
+        donationsTotal += msg.value;
 
         emit Donation(msg.sender, msg.value);
     }
 
     function returnDonation() external {
         if (block.timestamp < donationsEndTime) revert DonationsNotEnded();
-        if (address(this).balance >= donationsGoal) revert DonationsGoalReached();
-        if (claimed) revert DonationsAlreadyClaimed();
+        if (donationsTotal >= donationsGoal) revert DonationsGoalReached();
+        if (claimTimestamp > 0) revert DonationsAlreadyClaimed();
 
         uint256 amount = donations[msg.sender];
         if (amount == 0) revert NoDonation();
@@ -51,21 +56,27 @@ contract EthDonations is Ownable {
         if (!success) revert TransferFailed();
     }
 
-    function claimDonations(address recipient) external onlyOwner {
-        if (claimed) revert DonationsAlreadyClaimed();
+    function queueClaim() external onlyOwner {
+        if (claimTimestamp > 0) revert DonationsAlreadyQueued();
+        if (donationsTotal < donationsGoal) revert DonationsGoalNotReached();
+
+        claimTimestamp = block.timestamp;
+    }
+
+    function claim(address recipient) external onlyOwner {
+        if (claimTimestamp == 0) revert DonationsNotQueued();
+        if (block.timestamp < claimTimestamp + 60) revert DonationsNotClaimable();
         uint256 amount = address(this).balance;
-        if (amount < donationsGoal) revert DonationsGoalNotReached();
+        if (amount == 0) revert DonationsAlreadyClaimed();
 
         (bool success,) = recipient.call{value: amount}("");
         if (!success) revert TransferFailed();
-
-        claimed = true;
     }
 
     function addDonationsFor(address[] calldata donors, uint256[] calldata amounts) external payable onlyOwner {
         if (msg.value == 0) revert NoDonation();
-        if (block.timestamp > donationsEndTime) revert DonationsEnded();
-        if (claimed) revert DonationsAlreadyClaimed();
+        if (block.timestamp >= donationsEndTime) revert DonationsEnded();
+        if (claimTimestamp > 0) revert DonationsAlreadyClaimed();
 
         uint256 length = donors.length;
         if (donors.length != amounts.length) revert LengthMismatch();
@@ -78,6 +89,7 @@ contract EthDonations is Ownable {
         }
 
         if (totalAmount != msg.value) revert AmountMismatch();
+        donationsTotal += totalAmount;
     }
 
     function rescueToken(address token, address recipient) external onlyOwner {
