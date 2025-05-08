@@ -3,8 +3,11 @@ pragma solidity 0.8.27;
 
 import {Ownable} from "@solady/contracts/auth/Ownable.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
+import {SafeTransferLib} from "@solady/contracts/utils/SafeTransferLib.sol";
 
 contract EthDonations is Ownable {
+    using SafeTransferLib for address;
+
     error DonationsEnded();
     error DonationsNotEnded();
     error NoDonation();
@@ -93,7 +96,7 @@ contract EthDonations is Ownable {
     }
 
     function rescueToken(address token, address recipient) external onlyOwner {
-        IERC20(token).transfer(recipient, IERC20(token).balanceOf(address(this)));
+        token.safeTransfer(recipient, IERC20(token).balanceOf(address(this)));
     }
 
     receive() external payable {
