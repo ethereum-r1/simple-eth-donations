@@ -229,7 +229,6 @@ contract EthDonationsTest is Test {
         vm.expectRevert(EthDonations.DonationsEnded.selector);
         d.addDonationsFor{value: 2 ether}(donors, amounts);
     }
-    
 
     function test_Fallback() public {
         (bool success,) = address(d).call{value: 1 ether}("");

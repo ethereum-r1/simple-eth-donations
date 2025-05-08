@@ -4,7 +4,7 @@ pragma solidity 0.8.27;
 import {Ownable} from "@solady/contracts/auth/Ownable.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 import {SafeTransferLib} from "@solady/contracts/utils/SafeTransferLib.sol";
-                                                                                                
+
 contract EthDonations is Ownable {
     using SafeTransferLib for address;
 
