@@ -13,7 +13,7 @@ contract EthDonationsScript is Script {
     function run() public {
         vm.startBroadcast();
 
-        d = new EthDonations(1000 ether, block.timestamp + 90 days, owner);
+        d = new EthDonations(1000 ether, 1756763999, owner);
 
         vm.stopBroadcast();
     }
